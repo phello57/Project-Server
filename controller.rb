@@ -1,13 +1,9 @@
 require 'rack'
 
 app = proc do |env|
-  req = Rack::Request.new(env)
-
-  response_body = ''
-  req.params.each { |key, value| response_body += "#{key} : #{value}\n " }
-
-  [200, { 'Content-Type' => 'text/html' }, [response_body]]
+  [200, { 'Content-Type' => 'text/plain' }, [Rack::Request.new(env).params.to_s]]
 end
 
 Rackup::Handler::WEBrick.run app
+
 
