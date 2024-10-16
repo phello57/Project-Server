@@ -12,9 +12,9 @@ class App
     log_pass = Base64.decode64(auth&.split&.last).split(':')
 
     if log_pass[0] == LOGIN_FROM_BD && log_pass[1] == PASS_FROM_BD
-      [200, { 'Content-Type' => 'text/plain' }, ["You authorization"]]
+      [200, { 'Content-Type' => 'text/plain' }, ["You authentication"]]
     else
-      [403, { 'Content-Type' => 'text/plain' }, ["You aren`t authorization"]]
+      [401, { 'Content-Type' => 'text/plain' }, ["You aren`t authentication"]]
     end
 
   end
