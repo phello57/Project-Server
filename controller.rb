@@ -1,16 +1,14 @@
-# frozen_string_literal: true
-
 require 'rack'
 require 'faraday'
 require 'base64'
 require 'sqlite3'
 require 'bcrypt'
-require './sql_init'
+require './sql/sql_init'
 
 
 class App
   def initialize
-    @db = Sql_init.new.init
+    @db = SqlInit.new.init
   end
 
   def call(env)
@@ -30,7 +28,7 @@ class App
   end
 
   def get_pass_from_db(login)
-    @db.execute("select * from users where username = \"#{login}\"").first[1]
+    @db.execute("select password from users where username = \"#{login}\"")[0][0]
   end
 end
 
