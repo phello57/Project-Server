@@ -1,16 +1,22 @@
 require 'rack'
 require 'faraday'
-
+require "base64"
 
 class App
-  ECHO_URL = 'https://echo.free.beeceptor.com'
+  LOGIN_FROM_BD = 'phello'
+  PASS_FROM_BD = 'qwerty123'
   def call(env)
-    response = Faraday.post(ECHO_URL) do |req|
-      req.headers['Content-Type'] = 'application/json'
-      req.body = Rack::Request.new(env).params.to_json
+
+    auth = Rack::Request.new(env).env["HTTP_AUTHORIZATION"]
+
+    log_pass = Base64.decode64(auth&.split&.last).split(':')
+
+    if log_pass[0] == LOGIN_FROM_BD && log_pass[1] == PASS_FROM_BD
+      [200, { 'Content-Type' => 'text/plain' }, ["You authorization"]]
+    else
+      [403, { 'Content-Type' => 'text/plain' }, ["You aren`t authorization"]]
     end
 
-    [200, { 'Content-Type' => 'text/plain' }, [response.body.to_s]]
   end
 end
 
