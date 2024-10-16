@@ -2,15 +2,17 @@ require 'rack'
 require 'faraday'
 require 'json'
 
-echo_url = "https://echo.free.beeceptor.com/?"
+ECHO_URL = "https://echo.free.beeceptor.com"
 
-app = proc do |env|
-  add_params = Rack::Utils.build_query(Rack::Request.new(env).params)
+class App
+  def call(env)
+    response =  Faraday.post(ECHO_URL) do |req|
+      req.headers['Content-Type'] = 'application/json'
+      req.body = Rack::Request.new(env).params.to_json
+    end
 
-  response = Faraday.get(echo_url + add_params)
-
-  [200, { 'Content-Type' => 'text/plain' }, [JSON.parse(response.body)["parsedQueryParams"].to_s ]]
+    [200, { 'Content-Type' => 'text/plain' }, [response.body.to_s]]
+  end
 end
 
-Rackup::Handler::WEBrick.run app
-
+Rackup::Handler::WEBrick.run App.new
