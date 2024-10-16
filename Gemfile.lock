@@ -1,6 +1,16 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    faraday (2.12.0)
+      faraday-net_http (>= 2.0, < 3.4)
+      json
+      logger
+    faraday-net_http (3.3.0)
+      net-http
+    json (2.7.2)
+    logger (1.6.1)
+    net-http (0.4.1)
+      uri
     nio4r (2.7.3)
     puma (6.4.3)
       nio4r (~> 2.0)
@@ -8,17 +18,17 @@ GEM
     rackup (2.1.0)
       rack (>= 3)
       webrick (~> 1.8)
+    uri (0.13.1)
     webrick (1.8.2)
 
 PLATFORMS
   x64-mingw-ucrt
 
 DEPENDENCIES
+  faraday
   puma
   rack (= 3.1.8)
   rackup
 
 BUNDLED WITH
    2.5.21
-
-
