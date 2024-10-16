@@ -1,23 +1,36 @@
 require 'rack'
 require 'faraday'
 require "base64"
+require "sqlite3"
+require 'bcrypt'
+require './sql_init'
+
 
 class App
-  LOGIN_FROM_BD = 'phello'
-  PASS_FROM_BD = 'qwerty123'
+  def initialize
+    @db = Sql_init.new.init
+  end
+
   def call(env)
+    req_login, req_pass = get_req_login_pass(env)
+    pass_from_db = get_pass_from_db(req_login)
 
-    auth = Rack::Request.new(env).env["HTTP_AUTHORIZATION"]
-
-    log_pass = Base64.decode64(auth&.split&.last).split(':')
-
-    if log_pass[0] == LOGIN_FROM_BD && log_pass[1] == PASS_FROM_BD
+    if BCrypt::Password.new(pass_from_db) == req_pass
       [200, { 'Content-Type' => 'text/plain' }, ["You authentication"]]
     else
       [401, { 'Content-Type' => 'text/plain' }, ["You aren`t authentication"]]
     end
-
   end
+
+  def get_req_login_pass(env)
+    auth = Rack::Request.new(env).env["HTTP_AUTHORIZATION"]
+    Base64.decode64(auth&.split&.last).split(':')
+  end
+
+  def get_pass_from_db(login)
+    @db.execute( "select * from users where username = \"#{login}\"" ).first[1]
+  end
+
 end
 
 Rackup::Handler::WEBrick.run App.new
