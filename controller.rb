@@ -1,10 +1,11 @@
+# frozen_string_literal: true
+
 require 'rack'
 require 'faraday'
 require 'base64'
 require 'sqlite3'
 require 'bcrypt'
-require './sql/sql_init'
-
+require './sql_init'
 
 class App
   def initialize
