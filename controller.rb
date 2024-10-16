@@ -1,6 +1,5 @@
 require 'rack'
 require 'faraday'
-require 'json'
 
 ECHO_URL = "https://echo.free.beeceptor.com"
 
