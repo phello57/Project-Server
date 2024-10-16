@@ -1,9 +1,17 @@
 require 'rack'
+require 'faraday'
 
-app = proc do |env|
-  [200, { 'Content-Type' => 'text/plain' }, [Rack::Request.new(env).params.to_s]]
+
+class App
+  ECHO_URL = 'https://echo.free.beeceptor.com'
+  def call(env)
+    response = Faraday.post(ECHO_URL) do |req|
+      req.headers['Content-Type'] = 'application/json'
+      req.body = Rack::Request.new(env).params.to_json
+    end
+
+    [200, { 'Content-Type' => 'text/plain' }, [response.body.to_s]]
+  end
 end
 
-Rackup::Handler::WEBrick.run app
-
-
+Rackup::Handler::WEBrick.run App.new
