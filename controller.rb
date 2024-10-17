@@ -13,24 +13,26 @@ class App
   end
 
   def call(env)
-    req_login, req_pass = get_req_login_pass(env)
-    pass_from_db = get_pass_from_db(req_login)
+    req_login, req_pass = parse_credentials(env)
 
-    if BCrypt::Password.new(pass_from_db) == req_pass
+    pass_from_db = fetch_password_hash(req_login.to_sym.to_s)
+
+    if pass_from_db != nil && BCrypt::Password.new(pass_from_db) == req_pass
       [200, { 'Content-Type' => 'text/plain' }, ['You authentication']]
     else
       [401, { 'Content-Type' => 'text/plain' }, ['You aren`t authentication']]
     end
   end
 
-  def get_req_login_pass(env)
+  def parse_credentials(env)
     auth = Rack::Request.new(env).env['HTTP_AUTHORIZATION']
     Base64.decode64(auth&.split&.last).split(':')
   end
 
-  def get_pass_from_db(login)
-    @db.execute("select password from users where username = \"#{login}\"")[0][0]
+  def fetch_password_hash(login)
+     @db.execute("select password from users where username = ? ", login).first&.first
   end
+
 end
 
 Rackup::Handler::WEBrick.run App.new

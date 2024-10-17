@@ -1,6 +1,13 @@
+require './sql/migrate'
+require './sql/seed'
 
 class SqlInit
+
   def init
-    SQLite3::Database.new('test.db')
+    db = SQLite3::Database.new('test.db')
+    Migrate.new(db)
+    Seed.new(db)
+
+    db
   end
 end
