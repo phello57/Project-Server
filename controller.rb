@@ -29,28 +29,19 @@ class App
       token = Base64.encode64(json).delete("\n")
 
       # === Result ===
-
       json_responce = { token: token, userdata: json }.to_json
 
       [200, { 'Content-Type' => 'application/json' }, [json_responce]]
     else
-
-      json_string = @request.params.to_json
-      parsed_params = JSON.parse(json_string)
-
-      user_data = Base64.decode64(parsed_params['token'])
-      parsed_user_data = JSON.parse(user_data)
-
-      is_user_auth = fetch_user_exists(parsed_user_data) == 1
+      is_user_auth = fetch_user_exists
 
       # === Echo ===
       send_echo({ token: token }.to_json)
 
-
       if is_user_auth
-        [200, { 'Content-Type' => 'text/plain' }, ['You authentication was successful']]
+        [200, { 'Content-Type' => 'text/plain' }, ['Your authentication was successful']]
       else
-        [401, { 'Content-Type' => 'text/plain' }, [parsed_user_data['login']]]
+        [401, { 'Content-Type' => 'text/plain' }, ['Your authentication has failed']]
       end
     end
   end
@@ -71,8 +62,14 @@ class App
     @db.execute('select id, password from users where username = ? ', login).first
   end
 
-  def fetch_user_exists(data)
-    @db.execute('select 1 from users where id = ? ', data['id_user']).first&.first
+  def fetch_user_exists
+    json_string = @request.params.to_json
+    parsed_params = JSON.parse(json_string)
+
+    user_data = Base64.decode64(parsed_params['token'])
+    parsed_user_data = JSON.parse(user_data)
+
+    @db.execute('select 1 from users where id = ? ', parsed_user_data['id_user']).first&.first == 1
   end
 end
 
