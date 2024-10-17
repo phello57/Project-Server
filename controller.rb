@@ -17,7 +17,7 @@ class App
 
     pass_from_db = fetch_password_hash(req_login.to_sym.to_s)
 
-    if pass_from_db != nil && BCrypt::Password.new(pass_from_db) == req_pass
+    if !pass_from_db.nil? && BCrypt::Password.new(pass_from_db) == req_pass
       [200, { 'Content-Type' => 'text/plain' }, ['You authentication']]
     else
       [401, { 'Content-Type' => 'text/plain' }, ['You aren`t authentication']]
@@ -30,9 +30,8 @@ class App
   end
 
   def fetch_password_hash(login)
-     @db.execute("select password from users where username = ? ", login).first&.first
+    @db.execute('select password from users where username = ? ', login).first&.first
   end
-
 end
 
 Rackup::Handler::WEBrick.run App.new
