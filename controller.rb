@@ -69,7 +69,7 @@ class App
     user_data = Base64.decode64(parsed_params['token'])
     parsed_user_data = JSON.parse(user_data)
 
-    @db.execute('select 1 from users where id = ? ', parsed_user_data['id_user']).first&.first == 1
+    !parsed_user_data.nil? && @db.execute('select 1 from users where id = ? and username = ?', [parsed_user_data['id_user'], parsed_user_data['login']]).first&.first == 1
   end
 end
 
