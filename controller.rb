@@ -5,32 +5,71 @@ require 'faraday'
 require 'base64'
 require 'sqlite3'
 require 'bcrypt'
-require './sql_init'
+require 'json'
 
 class App
+  ECHO_URL = 'https://echo.free.beeceptor.com'
   def initialize
-    @db = SqlInit.new.init
+    @db = SQLite3::Database.new('test.db')
+    @request = nil
   end
 
   def call(env)
-    req_login, req_pass = parse_credentials(env)
+    @request = Rack::Request.new(env)
 
-    pass_from_db = fetch_password_hash(req_login.to_sym.to_s)
+    if @request.get? && @request.path == '/token'
 
-    if !pass_from_db.nil? && BCrypt::Password.new(pass_from_db) == req_pass
-      [200, { 'Content-Type' => 'text/plain' }, ['You authentication']]
+      # === User data ===
+      req_login, req_pass = parse_credentials
+      db_id, db_pass = fetch_user_data(req_login.to_sym.to_s)
+      !db_pass.nil? && BCrypt::Password.new(db_pass) == req_pass
+
+      # === Token ===
+      json = { "id_user": db_id, "login": req_login }.to_json
+      token = Base64.encode64(json).delete("\n")
+
+      # === Result ===
+      json_responce = { token: token, userdata: json }.to_json
+
+      [200, { 'Content-Type' => 'application/json' }, [json_responce]]
     else
-      [401, { 'Content-Type' => 'text/plain' }, ['You aren`t authentication']]
+      is_user_auth = fetch_user_exists
+
+      # === Echo ===
+      send_echo({ token: token }.to_json)
+
+      if is_user_auth
+        [200, { 'Content-Type' => 'text/plain' }, ['Your authentication was successful']]
+      else
+        [401, { 'Content-Type' => 'text/plain' }, ['Your authentication has failed']]
+      end
     end
   end
 
-  def parse_credentials(env)
-    auth = Rack::Request.new(env).env['HTTP_AUTHORIZATION']
-    Base64.decode64(auth&.split&.last).split(':')
+  def parse_credentials
+    auth = @request.env['HTTP_AUTHORIZATION']
+    Base64.decode64(auth.split&.last).split(':')
   end
 
-  def fetch_password_hash(login)
-    @db.execute('select password from users where username = ? ', login).first&.first
+  def send_echo(data)
+    Faraday.post(ECHO_URL) do |req|
+      req.headers['Content-Type'] = 'application/json'
+      req.body = data
+    end
+  end
+
+  def fetch_user_data(login)
+    @db.execute('select id, password from users where username = ? ', login).first
+  end
+
+  def fetch_user_exists
+    json_string = @request.params.to_json
+    parsed_params = JSON.parse(json_string)
+
+    user_data = Base64.decode64(parsed_params['token'])
+    parsed_user_data = JSON.parse(user_data)
+
+    !parsed_user_data.nil? && @db.execute('select 1 from users where id = ? and username = ?', [parsed_user_data['id_user'], parsed_user_data['login']]).first&.first == 1
   end
 end
 
